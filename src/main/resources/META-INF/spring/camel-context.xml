@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Configures the Camel Context -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cxf="http://camel.apache.org/schema/cxf"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://camel.apache.org/schema/cxf http://camel.apache.org/schema/cxf/camel-cxf.xsd
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+	<!-- http://localhost:9191/cxf -->
+	<cxf:cxfEndpoint id="salesforceEndpoint" address="http://localhost:9191/cxf/sf"
+		serviceClass="com.sophiademo.camel.salesforce.SalesforceService" />
+
+	<bean id="salesforce"
+		class="org.apache.camel.component.salesforce.SalesforceComponent">
+		<property name="loginConfig">
+			<bean class="org.apache.camel.component.salesforce.SalesforceLoginConfig">
+				<property name="loginUrl" value="https://login.salesforce.com"></property>
+				<property name="clientId"
+					value="3MVG9uudbyLbNPZO8ch2f7u2waPNS5TlM5nomUfwx7ZZrYjpvRz9A3bNUi3u6_pZ0YfZDw7uy1j9OK.1i6qoN" />
+				<property name="clientSecret" value="1444705462844972300" />
+				<property name="userName" value="integration-jcano@redhat.com" />
+				<property name="password" value="jorg1981*H50nPd2GBefZVOxzXfCGedau" />
+			</bean>
+		</property>
+		<property name="packages" value="org.apache.camel.salesforce.dto"></property>
+		<property name="config">
+			<bean
+				class="org.apache.camel.component.salesforce.SalesforceEndpointConfig">
+				<property name="sObjectName" value="QueryRecordsAccount"></property>
+				<property name="sObjectClass"
+					value="org.apache.camel.salesforce.dto.QueryRecordsAccount"></property>
+			</bean>
+		</property>
+		<!-- org.apache.camel.salesforce.dto.QueryRecordsOpportunity.class -->
+	</bean>
+	<!-- here is a sample which processes the input files (leaving them in place 
+		- see the 'noop' flag) then performs content based routing on the message 
+		using XPath -->
+	<camelContext xmlns="http://camel.apache.org/schema/spring">
+  <route>
+    <from uri="salesforceEndpoint"/>
+    <log message="${header.operationName}"/>
+    <to uri="salesforce:query?sObjectQuery=SELECT Id, Name FROM Opportunity"/>
+    <to uri="log: Query result back from Salesforce:${body}"/>
+    <convertBodyTo type="org.apache.camel.salesforce.dto.QueryRecordsAccount"/>
+  </route>
+  <route id="sfRoute">
+    <from uri="timer://foo?repeatCount=1"/>
+    <to uri="salesforce:query?sObjectQuery=SELECT id, Name, Description FROM Account WHERE Id='00136000005PgBKAA0'"/>
+    <convertBodyTo type="java.lang.String"/>
+    <log message="Query result back from Salesforce: ${body}"/>
+  </route>
+</camelContext>
+
+</beans>
