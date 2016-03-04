@@ -9,12 +9,12 @@
        http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
 	<!-- http://localhost:9191/cxf -->
 
-<!-- 	<cxf:cxfEndpoint id="salesforceEndpoint" address="http://localhost:9191/cxf/sf" -->
-<!-- 		serviceClass="com.sophiademo.camel.salesforce.SalesforceService" /> -->
-		
+	<!-- <cxf:cxfEndpoint id="salesforceEndpoint" address="http://localhost:9191/cxf/sf" -->
+	<!-- serviceClass="com.sophiademo.camel.salesforce.SalesforceService" /> -->
+
 	<cxf:rsServer id="salesforceEndpoint" address="http://localhost:9191/cxf"
 		serviceClass="com.sophiademo.camel.salesforce.SalesforceService" />
-		
+
 	<bean id="salesforce"
 		class="org.apache.camel.component.salesforce.SalesforceComponent">
 		<property name="loginConfig">
@@ -42,32 +42,52 @@
 		- see the 'noop' flag) then performs content based routing on the message 
 		using XPath -->
 	<camelContext xmlns="http://camel.apache.org/schema/spring">
-  <route>
-    <from uri="cxfrs:bean:salesforceEndpoint"/>
-    <log message="${header.operationName}"/>
-    <choice>
-      <when>
-        <simple>${header.operationName} == "getOpportunities"</simple>
-	    <to uri="salesforce:query?sObjectQuery=SELECT Id, Name FROM Opportunity"/>
-	    <to uri="log: Query result back from Salesforce:${body}"/>
-      </when>
-      <when>
-        <simple>${header.operationName} == "getAccounts"</simple>
-	    <to uri="salesforce:query?sObjectQuery=SELECT Id, Name FROM Account"/>
-	    <to uri="log: Query result back from Salesforce:${body}"/>
-      </when>
-    </choice>    
-    <marshal>
-      <json prettyPrint="true" library="Jackson"/>
-    </marshal>
-    
-  </route>
-  <route id="sfRoute">
-    <from uri="timer://foo?repeatCount=1"/>
-    <to uri="salesforce:query?sObjectQuery=SELECT id, Name, Description FROM Account WHERE Id='00136000005PgBKAA0'"/>
-    <convertBodyTo type="java.lang.String"/>
-    <log message="Query result back from Salesforce: ${body}"/>
-  </route>
-</camelContext>
+		<route>
+			<from uri="cxfrs:bean:salesforceEndpoint" />
+			<log message="${header.operationName}" />
+			<choice>
+				<when>
+					<simple>${header.operationName} == "getOpportunities"</simple>
+					<to
+						uri="salesforce:query?sObjectQuery=SELECT Id, Name FROM Opportunity" />
+					<to uri="log: Query result back from Salesforce:${body}" />
+				</when>
+				<when>
+					<simple>${header.operationName} == "getAccounts"</simple>
+					<to uri="salesforce:query?sObjectQuery=SELECT Id, Name FROM Account" />
+					<to uri="log: Query result back from Salesforce:${body}" />
+				</when>
+				<when>
+					<simple>${header.operationName} == "getAccount"</simple>
+					<to uri="log: Search Account with ID:${header.id}" />
+					<to uri="log: Search Account with ID:${body}" />
+					
+<!-- 					<to -->
+<!-- 						uri="salesforce:query?sObjectQuery=SELECT id, Name, Description FROM Account WHERE Id=${body}" /> -->
+<!-- 					<to uri="log: Query result back from Salesforce:${body}" /> -->
+				</when>
+				<when>
+					<simple>${header.operationName} == "getOpportunity"</simple>
+					<to uri="log: Search Opportunity with ID:${header.id}" />
+					<to uri="log: Search Opportunity with ID:${body}" />
+<!-- 					<to -->
+<!-- 						uri="salesforce:query?sObjectQuery=SELECT id, Name, Description FROM Opportunity WHERE Id=${body}" /> -->
+					
+<!-- 					<to uri="log: Query result back from Salesforce:${body}" /> -->
+				</when>
+			</choice>
+			<marshal>
+				<json prettyPrint="true" library="Jackson" />
+			</marshal>
+
+		</route>
+		<route id="sfRoute">
+			<from uri="timer://foo?repeatCount=1" />
+			<to
+				uri="salesforce:query?sObjectQuery=SELECT id, Name, Description FROM Account WHERE Id='00136000005PgBKAA0'" />
+			<convertBodyTo type="java.lang.String" />
+			<log message="Query result back from Salesforce: ${body}" />
+		</route>
+	</camelContext>
 
 </beans>
