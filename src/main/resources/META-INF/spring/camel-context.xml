@@ -68,8 +68,8 @@
 				</when>
 				<when>
 					<simple>${header.operationName} == "getOpportunity"</simple>
-					<to uri="log: Search Opportunity with ID:${header.id}" />
-					<to uri="log: Search Opportunity with ID:${body}" />
+					<to uri="log: Search with ID: ${header.id}" />
+					<to uri="log: Search with ID: ${body}" />
 <!-- 					<to -->
 <!-- 						uri="salesforce:query?sObjectQuery=SELECT id, Name, Description FROM Opportunity WHERE Id=${body}" /> -->
 					
