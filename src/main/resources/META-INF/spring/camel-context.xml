@@ -8,9 +8,13 @@
        http://camel.apache.org/schema/cxf http://camel.apache.org/schema/cxf/camel-cxf.xsd
        http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
 	<!-- http://localhost:9191/cxf -->
-	<cxf:cxfEndpoint id="salesforceEndpoint" address="http://localhost:9191/cxf/sf"
-		serviceClass="com.sophiademo.camel.salesforce.SalesforceService" />
 
+<!-- 	<cxf:cxfEndpoint id="salesforceEndpoint" address="http://localhost:9191/cxf/sf" -->
+<!-- 		serviceClass="com.sophiademo.camel.salesforce.SalesforceService" /> -->
+		
+	<cxf:rsServer id="salesforceEndpoint" address="http://localhost:9191/cxf"
+		serviceClass="com.sophiademo.camel.salesforce.SalesforceService" />
+		
 	<bean id="salesforce"
 		class="org.apache.camel.component.salesforce.SalesforceComponent">
 		<property name="loginConfig">
@@ -29,7 +33,7 @@
 				class="org.apache.camel.component.salesforce.SalesforceEndpointConfig">
 				<property name="sObjectName" value="QueryRecordsAccount"></property>
 				<property name="sObjectClass"
-					value="org.apache.camel.salesforce.dto.QueryRecordsAccount"></property>
+					value="org.apache.camel.salesforce.dto.QueryRecordsOpportunity"></property>
 			</bean>
 		</property>
 		<!-- org.apache.camel.salesforce.dto.QueryRecordsOpportunity.class -->
@@ -39,11 +43,24 @@
 		using XPath -->
 	<camelContext xmlns="http://camel.apache.org/schema/spring">
   <route>
-    <from uri="salesforceEndpoint"/>
+    <from uri="cxfrs:bean:salesforceEndpoint"/>
     <log message="${header.operationName}"/>
-    <to uri="salesforce:query?sObjectQuery=SELECT Id, Name FROM Opportunity"/>
-    <to uri="log: Query result back from Salesforce:${body}"/>
-    <convertBodyTo type="org.apache.camel.salesforce.dto.QueryRecordsAccount"/>
+    <choice>
+      <when>
+        <simple>${header.operationName} == "getOpportunities"</simple>
+	    <to uri="salesforce:query?sObjectQuery=SELECT Id, Name FROM Opportunity"/>
+	    <to uri="log: Query result back from Salesforce:${body}"/>
+      </when>
+      <when>
+        <simple>${header.operationName} == "getAccounts"</simple>
+	    <to uri="salesforce:query?sObjectQuery=SELECT Id, Name FROM Account"/>
+	    <to uri="log: Query result back from Salesforce:${body}"/>
+      </when>
+    </choice>    
+    <marshal>
+      <json prettyPrint="true" library="Jackson"/>
+    </marshal>
+    
   </route>
   <route id="sfRoute">
     <from uri="timer://foo?repeatCount=1"/>
